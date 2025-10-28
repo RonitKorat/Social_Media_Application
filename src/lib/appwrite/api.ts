@@ -542,3 +542,66 @@ export async function updateUser(user: IUpdateUser) {
     console.log(error);
   }
 }
+
+// Follow a user
+export async function followUser(followerId: string, followingId: string) {
+  try {
+    const follow = await databases.createDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.followsCollectionId, // <-- Add this to your config
+      ID.unique(),
+      {
+        followerId,
+        followingId,
+      }
+    );
+    return follow;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+}
+
+// Unfollow a user
+export async function unfollowUser(followerId: string, followingId: string) {
+  try {
+    // Find the follow document
+    const follows = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.followsCollectionId,
+      [
+        Query.equal('followerId', followerId),
+        Query.equal('followingId', followingId),
+      ]
+    );
+    if (follows.documents.length === 0) return null;
+    // Delete the follow document
+    await databases.deleteDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.followsCollectionId,
+      follows.documents[0].$id
+    );
+    return true;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+}
+
+// Check if following
+export async function isFollowing(followerId: string, followingId: string) {
+  try {
+    const follows = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.followsCollectionId,
+      [
+        Query.equal('followerId', followerId),
+        Query.equal('followingId', followingId),
+      ]
+    );
+    return follows.documents.length > 0;
+  } catch (error) {
+    console.log(error);
+    return false;
+  }
+}
